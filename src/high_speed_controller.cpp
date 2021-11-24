@@ -39,7 +39,7 @@ double PID::calc(double error) {
 
     double P = Kp * error;
     double I = Ki * running_error_sum;
-    double D = Kd * (previous_error - error);
+    double D = Kd * (error - previous_error);
 
     this->previous_error = error;
     return P + I + D;
@@ -82,7 +82,8 @@ int main(int argc, char **argv) {
     //start a loop; one loop per two second
     ros::Rate delay(0.5); // perhaps this could be faster for a controller?
 
-    PID pid_controller(0.2, 0.02, 0.1);
+    PID movement_controller(0.07, 0, 0);
+    PID rotational_controller(0.32, 0, 0.2); // 0.32, 0.2
     while (ros::ok()) {
 
         //***************************************
@@ -141,13 +142,20 @@ int main(int argc, char **argv) {
         //     motor_command.linear.x = 0.3;
         // }
 
-        double error = waypoint_theta - robot_theta;
-        std::cout << "error: " << error << std::endl;
+        double rotational_error = waypoint_theta - robot_theta;
+        double distance = sqrt(pow(robot_pose.getOrigin().x() - robot_pose.getOrigin().y(), 2) + pow(waypoint.translation.x - waypoint.translation.y, 2));
 
-        double angular_speed = pid_controller.calc(error);
-        std::cout << "speed: " << angular_speed << std::endl;
+        double rotational_speed = rotational_controller.calc(rotational_error);
+        double movement_speed = movement_controller.calc(distance);
 
-        motor_command.angular.z = angular_speed;
+        std::cout << "rotational error: " << rotational_error << std::endl;
+        if (abs(rotational_error) < 0.1) {
+            motor_command.linear.x = movement_speed;
+            std::cout << "moving forward" << std::endl;
+        } else
+            motor_command.linear.x = 0;
+
+        motor_command.angular.z = rotational_speed;
         motor_command_publisher.publish(motor_command);
 
         //FIX ME -- FIX ME -- FIX ME -- FIX ME -- FIX ME -- FIX ME -- FIX ME
