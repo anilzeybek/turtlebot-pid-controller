@@ -1,8 +1,9 @@
 #include "geometry_msgs/Transform.h"
 #include "geometry_msgs/Twist.h"
 #include "ros/ros.h"
+#include "tf/transform_listener.h"
 #include <iostream>
-#include <tf/transform_listener.h>
+#include <vector>
 
 /*
  CAK
@@ -13,6 +14,36 @@ Instructions: Edit the control loop below.
 Read further instructions
 
 */
+
+class PID {
+private:
+    double Kp;
+    double Ki;
+    double Kd;
+    double running_error_sum = 0;
+    double previous_error = 0;
+
+public:
+    PID(double Kp, double Ki, double Kd);
+    double calc(double error);
+};
+
+PID::PID(double Kp, double Ki, double Kd) {
+    this->Kp = Kp;
+    this->Ki = Ki;
+    this->Kd = Kd;
+}
+
+double PID::calc(double error) {
+    running_error_sum += error;
+
+    double P = Kp * error;
+    double I = Ki * running_error_sum;
+    double D = Kd * (previous_error - error);
+
+    this->previous_error = error;
+    return P + I + D;
+}
 
 //contains waypoint data
 geometry_msgs::Transform waypoint;
@@ -50,6 +81,8 @@ int main(int argc, char **argv) {
 
     //start a loop; one loop per two second
     ros::Rate delay(0.5); // perhaps this could be faster for a controller?
+
+    PID pid_controller(0.2, 0.02, 0.1);
     while (ros::ok()) {
 
         //***************************************
@@ -102,11 +135,19 @@ int main(int argc, char **argv) {
         //***          DRIVE THE ROBOT HERE (same as with assignment 1)
         //***************************************
 
-        //I don't know what to do because nobody has programmed me with any smartness,
-        //so I'll do what everybody does, and drive very fast straight forwards.
-        motor_command.linear.x = 5000.0;
-        motor_command.angular.z = 0.0;
+        // if (std::abs(waypoint_theta - robot_theta) > 0.05) {
+        //     motor_command.linear.x = 0.0;
+        // } else {
+        //     motor_command.linear.x = 0.3;
+        // }
 
+        double error = waypoint_theta - robot_theta;
+        std::cout << "error: " << error << std::endl;
+
+        double angular_speed = pid_controller.calc(error);
+        std::cout << "speed: " << angular_speed << std::endl;
+
+        motor_command.angular.z = angular_speed;
         motor_command_publisher.publish(motor_command);
 
         //FIX ME -- FIX ME -- FIX ME -- FIX ME -- FIX ME -- FIX ME -- FIX ME
