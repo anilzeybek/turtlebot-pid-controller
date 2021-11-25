@@ -3,6 +3,7 @@
 #include "ros/ros.h"
 #include "tf/transform_listener.h"
 #include <iostream>
+#include <math.h>
 #include <vector>
 
 class PID {
@@ -97,13 +98,12 @@ int main(int argc, char **argv) {
         //***************************************
 
         //Print out the x,y coordinates of the transform
-        std::cout << "Robot is believed to be at (x,y): (" << robot_pose.getOrigin().x() << "," << robot_pose.getOrigin().y() << ")" << std::endl;
+        // std::cout << "Robot is believed to be at (x,y): (" << robot_pose.getOrigin().x() << "," << robot_pose.getOrigin().y() << ")" << std::endl;
 
         //Convert the quaternion-based orientation of the latest message to angle-axis in order to get the z rotation & print it.
         tf::Vector3 robot_axis = robot_pose.getRotation().getAxis();
         double robot_theta = robot_pose.getRotation().getAngle() * robot_axis[2]; // only need the z axis
-        std::cout << "Robot is believed to have orientation (theta): (" << robot_theta << ")" << std::endl
-                  << std::endl;
+        // std::cout << "Robot is believed to have orientation (theta): (" << robot_theta << ")" << std::endl << std::endl;
 
         //***************************************
         //***          Print current destination
@@ -113,21 +113,32 @@ int main(int argc, char **argv) {
         // subscribed to in the .subscribe function call above.
 
         //Print out the x,y coordinates of the latest message
-        std::cout << "Current waypoint (x,y): (" << waypoint.translation.x << "," << waypoint.translation.y << ")" << std::endl;
+        // std::cout << "Current waypoint (x,y): (" << waypoint.translation.x << "," << waypoint.translation.y << ")" << std::endl;
 
         //Convert the quaternion-based orientation of the latest message to angle-axis in order to get the z rotation & print it.
         tf::Quaternion quat(waypoint.rotation.x, waypoint.rotation.y, waypoint.rotation.z, waypoint.rotation.w);
         tf::Vector3 waypoint_axis = quat.getAxis();
         double waypoint_theta = quat.getAngle() * waypoint_axis[2]; // only need the z axis
-        std::cout << "Current waypoint (theta): (" << waypoint_theta << ")" << std::endl
-                  << std::endl;
+        // std::cout << "Current waypoint (theta): (" << waypoint_theta << ")" << std::endl << std::endl;
 
         //***************************************
         //***          DRIVE THE ROBOT HERE (same as with assignment 1)
         //***************************************
 
+        // TODO: when desired_theta is more than 180 degrees, it becomes stupid
+        // TODO: also if the rotational_error too much, maybe stopping is better than moving very slow
         double desired_theta = std::atan2(waypoint.translation.y - robot_pose.getOrigin().y(), waypoint.translation.x - robot_pose.getOrigin().x());
         double rotational_error = desired_theta - robot_theta;
+        std::cout << rotational_error << std::endl;
+
+        if (rotational_error >= 2 * M_PI) {
+            rotational_error -= 2 * M_PI;
+            std::cout << "subtracting 2pi:" << rotational_error << std::endl;
+        } else if (rotational_error <= -2 * M_PI) {
+            rotational_error += 2 * M_PI;
+            std::cout << "adding 2pi:" << rotational_error << std::endl;
+        }
+
         double rotational_speed = rotational_controller.calc(rotational_error);
 
         double distance = sqrt(pow(robot_pose.getOrigin().x() - robot_pose.getOrigin().y(), 2) + pow(waypoint.translation.x - waypoint.translation.y, 2));
@@ -136,8 +147,11 @@ int main(int argc, char **argv) {
         if (abs(rotational_error) < 0.1) {
             motor_command.linear.x = movement_speed;
             std::cout << "moving forward" << std::endl;
-        } else
-            motor_command.linear.x = movement_speed / 10;
+        } else if (abs(rotational_error) < 0.3) {
+            motor_command.linear.x = 0.05;
+        } else {
+            motor_command.linear.x = 0.0;
+        }
 
         motor_command.angular.z = rotational_speed;
         motor_command_publisher.publish(motor_command);
