@@ -80,7 +80,7 @@ int main(int argc, char **argv) {
     tf::TransformListener listener;
 
     //start a loop; one loop per two second
-    ros::Rate delay(0.5); // perhaps this could be faster for a controller?
+    ros::Rate delay(2.0); // perhaps this could be faster for a controller?
 
     PID movement_controller(0.07, 0, 0);
     PID rotational_controller(0.32, 0, 0.2); // 0.32, 0.2
