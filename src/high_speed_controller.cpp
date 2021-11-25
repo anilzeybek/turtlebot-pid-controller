@@ -5,16 +5,6 @@
 #include <iostream>
 #include <vector>
 
-/*
- CAK
-high_speed_controller.cpp
-BLG456E Assignment 2 skeleton
-
-Instructions: Edit the control loop below.
-Read further instructions
-
-*/
-
 class PID {
 private:
     double Kp;
@@ -82,7 +72,7 @@ int main(int argc, char **argv) {
     //start a loop; one loop per two second
     ros::Rate delay(2.0); // perhaps this could be faster for a controller?
 
-    PID movement_controller(0.07, 0, 0);
+    PID movement_controller(0.1, 0, 0);
     PID rotational_controller(0.32, 0, 0.2); // 0.32, 0.2
     while (ros::ok()) {
 
@@ -136,24 +126,18 @@ int main(int argc, char **argv) {
         //***          DRIVE THE ROBOT HERE (same as with assignment 1)
         //***************************************
 
-        // if (std::abs(waypoint_theta - robot_theta) > 0.05) {
-        //     motor_command.linear.x = 0.0;
-        // } else {
-        //     motor_command.linear.x = 0.3;
-        // }
-
-        double rotational_error = waypoint_theta - robot_theta;
-        double distance = sqrt(pow(robot_pose.getOrigin().x() - robot_pose.getOrigin().y(), 2) + pow(waypoint.translation.x - waypoint.translation.y, 2));
-
+        double desired_theta = std::atan2(waypoint.translation.y - robot_pose.getOrigin().y(), waypoint.translation.x - robot_pose.getOrigin().x());
+        double rotational_error = desired_theta - robot_theta;
         double rotational_speed = rotational_controller.calc(rotational_error);
+
+        double distance = sqrt(pow(robot_pose.getOrigin().x() - robot_pose.getOrigin().y(), 2) + pow(waypoint.translation.x - waypoint.translation.y, 2));
         double movement_speed = movement_controller.calc(distance);
 
-        std::cout << "rotational error: " << rotational_error << std::endl;
         if (abs(rotational_error) < 0.1) {
             motor_command.linear.x = movement_speed;
             std::cout << "moving forward" << std::endl;
         } else
-            motor_command.linear.x = 0;
+            motor_command.linear.x = movement_speed / 10;
 
         motor_command.angular.z = rotational_speed;
         motor_command_publisher.publish(motor_command);
