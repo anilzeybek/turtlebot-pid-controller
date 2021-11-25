@@ -74,10 +74,10 @@ int main(int argc, char **argv) {
     ros::Rate delay(2.0); // perhaps this could be faster for a controller?
 
     // P controller for linear movement
-    PID movement_controller(0.1, 0, 0);
+    PID movement_controller(0.5, 0, 0);
 
     // PD controller for rotational movement
-    PID rotational_controller(0.32, 0, 0.2); // 0.32, 0.2
+    PID rotational_controller(0.4, 0, 0.2); // 0.32, 0.2
     while (ros::ok()) {
 
         //***************************************
@@ -101,12 +101,12 @@ int main(int argc, char **argv) {
         //***************************************
 
         //Print out the x,y coordinates of the transform
-        // std::cout << "Robot is believed to be at (x,y): (" << robot_pose.getOrigin().x() << "," << robot_pose.getOrigin().y() << ")" << std::endl;
+        std::cout << "Robot is believed to be at (x,y): (" << robot_pose.getOrigin().x() << "," << robot_pose.getOrigin().y() << ")" << std::endl;
 
         //Convert the quaternion-based orientation of the latest message to angle-axis in order to get the z rotation & print it.
         tf::Vector3 robot_axis = robot_pose.getRotation().getAxis();
         double robot_theta = robot_pose.getRotation().getAngle() * robot_axis[2]; // only need the z axis
-        // std::cout << "Robot is believed to have orientation (theta): (" << robot_theta << ")" << std::endl << std::endl;
+        std::cout << "Robot is believed to have orientation (theta): (" << robot_theta << ")" << std::endl << std::endl;
 
         //***************************************
         //***          Print current destination
@@ -116,13 +116,13 @@ int main(int argc, char **argv) {
         // subscribed to in the .subscribe function call above.
 
         //Print out the x,y coordinates of the latest message
-        // std::cout << "Current waypoint (x,y): (" << waypoint.translation.x << "," << waypoint.translation.y << ")" << std::endl;
+        std::cout << "Current waypoint (x,y): (" << waypoint.translation.x << "," << waypoint.translation.y << ")" << std::endl;
 
         //Convert the quaternion-based orientation of the latest message to angle-axis in order to get the z rotation & print it.
         tf::Quaternion quat(waypoint.rotation.x, waypoint.rotation.y, waypoint.rotation.z, waypoint.rotation.w);
         tf::Vector3 waypoint_axis = quat.getAxis();
         double waypoint_theta = quat.getAngle() * waypoint_axis[2]; // only need the z axis
-        // std::cout << "Current waypoint (theta): (" << waypoint_theta << ")" << std::endl << std::endl;
+        std::cout << "Current waypoint (theta): (" << waypoint_theta << ")" << std::endl << std::endl;
 
         //***************************************
         //***          DRIVE THE ROBOT HERE (same as with assignment 1)
@@ -130,36 +130,31 @@ int main(int argc, char **argv) {
 
         double desired_theta = std::atan2(waypoint.translation.y - robot_pose.getOrigin().y(), waypoint.translation.x - robot_pose.getOrigin().x());
         double rotational_error = desired_theta - robot_theta;
-        std::cout << rotational_error << std::endl;
 
         // if error thinks it is more than 360 degrees, remove 360 from error
         if (rotational_error >= 2 * M_PI) {
             rotational_error -= 2 * M_PI;
-            std::cout << "00000000000:" << rotational_error << std::endl;
         } else if (rotational_error <= -2 * M_PI) {
             rotational_error += 2 * M_PI;
-            std::cout << "11111111111:" << rotational_error << std::endl;
         }
 
         // if error thinks it is more than 180 degrees, change its sign and reduce error
         if (rotational_error >= M_PI) {
             rotational_error = M_PI - rotational_error;
-            std::cout << "22222222222:" << rotational_error << std::endl;
         } else if (rotational_error <= -M_PI) {
             rotational_error += 2 * M_PI;
-            std::cout << "33333333333:" << rotational_error << std::endl;
         }
 
-        // TODO: if distance is very small, desired theta should be waypoint theta
+        // TODO: if distance is very small (0.1), desired theta should be waypoint theta
         double rotational_speed = rotational_controller.calc(rotational_error);
 
-        double distance = sqrt(pow(robot_pose.getOrigin().x() - robot_pose.getOrigin().y(), 2) + pow(waypoint.translation.x - waypoint.translation.y, 2));
+        double distance = sqrt(pow(robot_pose.getOrigin().x() - waypoint.translation.x, 2) + pow(robot_pose.getOrigin().y() - waypoint.translation.y, 2));
         double movement_speed = movement_controller.calc(distance);
 
         if (abs(rotational_error) < 0.1) {
             motor_command.linear.x = movement_speed;
         } else if (abs(rotational_error) < 0.3) {
-            motor_command.linear.x = 0.05;
+            motor_command.linear.x = 0.1;
         } else {
             motor_command.linear.x = 0.0;
         }
