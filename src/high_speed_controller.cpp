@@ -101,13 +101,12 @@ int main(int argc, char **argv) {
         //***************************************
 
         //Print out the x,y coordinates of the transform
-        std::cout << "Robot is believed to be at (x,y): (" << robot_pose.getOrigin().x() << "," << robot_pose.getOrigin().y() << ")" << std::endl;
+        // std::cout << "Robot is believed to be at (x,y): (" << robot_pose.getOrigin().x() << "," << robot_pose.getOrigin().y() << ")" << std::endl;
 
         //Convert the quaternion-based orientation of the latest message to angle-axis in order to get the z rotation & print it.
         tf::Vector3 robot_axis = robot_pose.getRotation().getAxis();
         double robot_theta = robot_pose.getRotation().getAngle() * robot_axis[2]; // only need the z axis
-        std::cout << "Robot is believed to have orientation (theta): (" << robot_theta << ")" << std::endl
-                  << std::endl;
+        // std::cout << "Robot is believed to have orientation (theta): (" << robot_theta << ")" << std::endl << std::endl;
 
         //***************************************
         //***          Print current destination
@@ -117,14 +116,13 @@ int main(int argc, char **argv) {
         // subscribed to in the .subscribe function call above.
 
         //Print out the x,y coordinates of the latest message
-        std::cout << "Current waypoint (x,y): (" << waypoint.translation.x << "," << waypoint.translation.y << ")" << std::endl;
+        // std::cout << "Current waypoint (x,y): (" << waypoint.translation.x << "," << waypoint.translation.y << ")" << std::endl;
 
         //Convert the quaternion-based orientation of the latest message to angle-axis in order to get the z rotation & print it.
         tf::Quaternion quat(waypoint.rotation.x, waypoint.rotation.y, waypoint.rotation.z, waypoint.rotation.w);
         tf::Vector3 waypoint_axis = quat.getAxis();
         double waypoint_theta = quat.getAngle() * waypoint_axis[2]; // only need the z axis
-        std::cout << "Current waypoint (theta): (" << waypoint_theta << ")" << std::endl
-                  << std::endl;
+        // std::cout << "Current waypoint (theta): (" << waypoint_theta << ")" << std::endl << std::endl;
 
         //***************************************
         //***          DRIVE THE ROBOT HERE (same as with assignment 1)
@@ -138,6 +136,7 @@ int main(int argc, char **argv) {
 
         double rotational_error = angle_to_waypoint - robot_theta;
         if (distance < 0.075) {
+            // if distance is very small, make same angle with waypoint
             rotational_error = waypoint_theta - robot_theta;
         }
 
@@ -158,11 +157,19 @@ int main(int argc, char **argv) {
         double rotational_speed = rotational_controller.calc(rotational_error);
         double movement_speed = movement_controller.calc(distance);
 
+        // if (abs(waypoint_theta - robot_theta) > M_PI_2 && abs(waypoint_theta - robot_theta) < 3 * M_PI_2) {
+        //     // go backwards
+        //     movement_speed = -movement_speed;
+        //     std::cout << "GO BACKWARDS" << std::endl;
+        // }
+
         if (abs(rotational_error) < 0.1) {
             motor_command.linear.x = movement_speed;
         } else if (abs(rotational_error) < 0.3) {
+            // can go slowly in linear if error not that big
             motor_command.linear.x = 0.1;
         } else {
+            // if error big, no lienar movement
             motor_command.linear.x = 0.0;
         }
 
