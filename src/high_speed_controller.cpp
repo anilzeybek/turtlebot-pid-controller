@@ -73,7 +73,10 @@ int main(int argc, char **argv) {
     //start a loop; one loop per two second
     ros::Rate delay(2.0); // perhaps this could be faster for a controller?
 
+    // P controller for linear movement
     PID movement_controller(0.1, 0, 0);
+
+    // PD controller for rotational movement
     PID rotational_controller(0.32, 0, 0.2); // 0.32, 0.2
     while (ros::ok()) {
 
@@ -125,20 +128,29 @@ int main(int argc, char **argv) {
         //***          DRIVE THE ROBOT HERE (same as with assignment 1)
         //***************************************
 
-        // TODO: when desired_theta is more than 180 degrees, it becomes stupid
-        // TODO: also if the rotational_error too much, maybe stopping is better than moving very slow
         double desired_theta = std::atan2(waypoint.translation.y - robot_pose.getOrigin().y(), waypoint.translation.x - robot_pose.getOrigin().x());
         double rotational_error = desired_theta - robot_theta;
         std::cout << rotational_error << std::endl;
 
+        // if error thinks it is more than 360 degrees, remove 360 from error
         if (rotational_error >= 2 * M_PI) {
             rotational_error -= 2 * M_PI;
-            std::cout << "subtracting 2pi:" << rotational_error << std::endl;
+            std::cout << "00000000000:" << rotational_error << std::endl;
         } else if (rotational_error <= -2 * M_PI) {
             rotational_error += 2 * M_PI;
-            std::cout << "adding 2pi:" << rotational_error << std::endl;
+            std::cout << "11111111111:" << rotational_error << std::endl;
         }
 
+        // if error thinks it is more than 180 degrees, change its sign and reduce error
+        if (rotational_error >= M_PI) {
+            rotational_error = M_PI - rotational_error;
+            std::cout << "22222222222:" << rotational_error << std::endl;
+        } else if (rotational_error <= -M_PI) {
+            rotational_error += 2 * M_PI;
+            std::cout << "33333333333:" << rotational_error << std::endl;
+        }
+
+        // TODO: if distance is very small, desired theta should be waypoint theta
         double rotational_speed = rotational_controller.calc(rotational_error);
 
         double distance = sqrt(pow(robot_pose.getOrigin().x() - robot_pose.getOrigin().y(), 2) + pow(waypoint.translation.x - waypoint.translation.y, 2));
@@ -146,7 +158,6 @@ int main(int argc, char **argv) {
 
         if (abs(rotational_error) < 0.1) {
             motor_command.linear.x = movement_speed;
-            std::cout << "moving forward" << std::endl;
         } else if (abs(rotational_error) < 0.3) {
             motor_command.linear.x = 0.05;
         } else {
