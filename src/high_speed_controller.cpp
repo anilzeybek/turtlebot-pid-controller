@@ -77,7 +77,7 @@ int main(int argc, char **argv) {
     PID movement_controller(0.5, 0, 0);
 
     // PD controller for rotational movement
-    PID rotational_controller(0.4, 0, 0.2); // 0.32, 0.2
+    PID rotational_controller(0.5, 0, 0.1); // 0.32, 0.2
     while (ros::ok()) {
 
         //***************************************
@@ -106,7 +106,8 @@ int main(int argc, char **argv) {
         //Convert the quaternion-based orientation of the latest message to angle-axis in order to get the z rotation & print it.
         tf::Vector3 robot_axis = robot_pose.getRotation().getAxis();
         double robot_theta = robot_pose.getRotation().getAngle() * robot_axis[2]; // only need the z axis
-        std::cout << "Robot is believed to have orientation (theta): (" << robot_theta << ")" << std::endl << std::endl;
+        std::cout << "Robot is believed to have orientation (theta): (" << robot_theta << ")" << std::endl
+                  << std::endl;
 
         //***************************************
         //***          Print current destination
@@ -122,14 +123,23 @@ int main(int argc, char **argv) {
         tf::Quaternion quat(waypoint.rotation.x, waypoint.rotation.y, waypoint.rotation.z, waypoint.rotation.w);
         tf::Vector3 waypoint_axis = quat.getAxis();
         double waypoint_theta = quat.getAngle() * waypoint_axis[2]; // only need the z axis
-        std::cout << "Current waypoint (theta): (" << waypoint_theta << ")" << std::endl << std::endl;
+        std::cout << "Current waypoint (theta): (" << waypoint_theta << ")" << std::endl
+                  << std::endl;
 
         //***************************************
         //***          DRIVE THE ROBOT HERE (same as with assignment 1)
         //***************************************
 
-        double desired_theta = std::atan2(waypoint.translation.y - robot_pose.getOrigin().y(), waypoint.translation.x - robot_pose.getOrigin().x());
-        double rotational_error = desired_theta - robot_theta;
+        // distance between robot and waypoint
+        double distance = sqrt(pow(robot_pose.getOrigin().x() - waypoint.translation.x, 2) + pow(robot_pose.getOrigin().y() - waypoint.translation.y, 2));
+
+        // angle_to_waypoint is the robot's angle to waypoint's position
+        double angle_to_waypoint = std::atan2(waypoint.translation.y - robot_pose.getOrigin().y(), waypoint.translation.x - robot_pose.getOrigin().x());
+
+        double rotational_error = angle_to_waypoint - robot_theta;
+        if (distance < 0.075) {
+            rotational_error = waypoint_theta - robot_theta;
+        }
 
         // if error thinks it is more than 360 degrees, remove 360 from error
         if (rotational_error >= 2 * M_PI) {
@@ -145,10 +155,7 @@ int main(int argc, char **argv) {
             rotational_error += 2 * M_PI;
         }
 
-        // TODO: if distance is very small (0.1), desired theta should be waypoint theta
         double rotational_speed = rotational_controller.calc(rotational_error);
-
-        double distance = sqrt(pow(robot_pose.getOrigin().x() - waypoint.translation.x, 2) + pow(robot_pose.getOrigin().y() - waypoint.translation.y, 2));
         double movement_speed = movement_controller.calc(distance);
 
         if (abs(rotational_error) < 0.1) {
