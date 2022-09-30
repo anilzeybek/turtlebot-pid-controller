@@ -1,0 +1,8 @@
+<?xml version="1.0"?>
+<launch>
+  <include file="$(find turtlebot_environment)/launch/env.launch">
+  </include>
+  
+  <node name="referee" pkg="turtlebot_environment" type="referee.py" args="route3 dor" output="screen"/>
+  <node name="high_speed_controller" pkg="turtlebot_controller" type="high_speed_controller" output="screen" />
+</launch>

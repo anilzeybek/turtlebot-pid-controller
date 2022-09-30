@@ -1,15 +1,15 @@
 cmake_minimum_required(VERSION 2.8.3)
-project(a2_456_answer)
+project(turtlebot_environment)
 
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
 find_package(catkin REQUIRED COMPONENTS
-  geometry_msgs
+  gazebo_msgs
   roscpp
-  std_msgs
-  tf
+  rospy
   trajectory_msgs
+  tf
 )
 
 ## System dependencies are found with CMake's conventions
@@ -30,10 +30,10 @@ find_package(catkin REQUIRED COMPONENTS
 ## * Let MSG_DEP_SET be the set of packages whose message types you use in
 ##   your messages/services/actions (e.g. std_msgs, actionlib_msgs, ...).
 ## * In the file package.xml:
-##   * add a build_depend tag for "message_generation"
 ##   * add a build_depend and a run_depend tag for each package in MSG_DEP_SET
-##   * If MSG_DEP_SET isn't empty the following dependency has been pulled in
-##     but can be declared for certainty nonetheless:
+##   * If MSG_DEP_SET isn't empty the following dependencies might have been
+##     pulled in transitively but can be declared for certainty nonetheless:
+##     * add a build_depend tag for "message_generation"
 ##     * add a run_depend tag for "message_runtime"
 ## * In this file (CMakeLists.txt):
 ##   * add "message_generation" and every package in MSG_DEP_SET to
@@ -69,27 +69,7 @@ find_package(catkin REQUIRED COMPONENTS
 ## Generate added messages and services with any dependencies listed here
 # generate_messages(
 #   DEPENDENCIES
-#   geometry_msgs#   std_msgs#   trajectory_msgs
-# )
-
-################################################
-## Declare ROS dynamic reconfigure parameters ##
-################################################
-
-## To declare and build dynamic reconfigure parameters within this
-## package, follow these steps:
-## * In the file package.xml:
-##   * add a build_depend and a run_depend tag for "dynamic_reconfigure"
-## * In this file (CMakeLists.txt):
-##   * add "dynamic_reconfigure" to
-##     find_package(catkin REQUIRED COMPONENTS ...)
-##   * uncomment the "generate_dynamic_reconfigure_options" section below
-##     and list every .cfg file to be processed
-
-## Generate dynamic reconfigure parameters in the 'cfg' folder
-# generate_dynamic_reconfigure_options(
-#   cfg/DynReconf1.cfg
-#   cfg/DynReconf2.cfg
+#   arm_navigation_msgs#   gazebo_msgs#   trajectory_msgs
 # )
 
 ###################################
@@ -103,8 +83,8 @@ find_package(catkin REQUIRED COMPONENTS
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
 #  INCLUDE_DIRS include
-#  LIBRARIES trajectory_skeleton_456
-#  CATKIN_DEPENDS geometry_msgs roscpp std_msgs tf trajectory_msgs
+#  LIBRARIES trajectory_referee_456
+#  CATKIN_DEPENDS arm_navigation_msgs gazebo_msgs roscpp rospy trajectory_msgs
 #  DEPENDS system_lib
 )
 
@@ -119,33 +99,30 @@ include_directories(
   ${catkin_INCLUDE_DIRS}
 )
 
-## Declare a C++ library
-# add_library(trajectory_skeleton_456
-#   src/${PROJECT_NAME}/trajectory_skeleton_456.cpp
+## Declare a cpp library
+# add_library(trajectory_referee_456
+#   src/${PROJECT_NAME}/trajectory_referee_456.cpp
 # )
 
-## Add cmake target dependencies of the library
-## as an example, code may need to be generated before libraries
-## either from message generation or dynamic reconfigure
-# add_dependencies(trajectory_skeleton_456 ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+## Declare a cpp executable
+# add_executable(trajectory_referee_456_node src/trajectory_referee_456_node.cpp)
+add_executable(print_waypoint src/print_waypoint.cpp)
+add_executable(print_state src/print_state.cpp)
 
-## Declare a C++ executable
-# add_executable(trajectory_skeleton_456_node src/trajectory_skeleton_456_node.cpp)
-add_executable(high_speed_controller src/high_speed_controller.cpp)
-
-## Add cmake target dependencies of the executable
-## same as for the library above
-add_dependencies(high_speed_controller ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
-# add_dependencies(trajectory_skeleton_456_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+## Add cmake target dependencies of the executable/library
+## as an example, message headers may need to be generated before nodes
+# add_dependencies(trajectory_referee_456_node trajectory_referee_456_generate_messages_cpp)
 
 ## Specify libraries to link a library or executable target against
-# target_link_libraries(trajectory_skeleton_456_node
+# target_link_libraries(trajectory_referee_456_node
 #   ${catkin_LIBRARIES}
 # )
-
-target_link_libraries(high_speed_controller 
-    ${catkin_LIBRARIES}
-)
+target_link_libraries(print_waypoint
+   ${catkin_LIBRARIES}
+ )
+target_link_libraries(print_state
+   ${catkin_LIBRARIES}
+ )
 
 #############
 ## Install ##
@@ -162,7 +139,7 @@ target_link_libraries(high_speed_controller
 # )
 
 ## Mark executables and/or libraries for installation
-# install(TARGETS trajectory_skeleton_456 trajectory_skeleton_456_node
+# install(TARGETS trajectory_referee_456 trajectory_referee_456_node
 #   ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
 #   LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
 #   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
@@ -187,7 +164,7 @@ target_link_libraries(high_speed_controller
 #############
 
 ## Add gtest based cpp test target and link libraries
-# catkin_add_gtest(${PROJECT_NAME}-test test/test_trajectory_skeleton_456.cpp)
+# catkin_add_gtest(${PROJECT_NAME}-test test/test_trajectory_referee_456.cpp)
 # if(TARGET ${PROJECT_NAME}-test)
 #   target_link_libraries(${PROJECT_NAME}-test ${PROJECT_NAME})
 # endif()

@@ -1,8 +1,0 @@
-<?xml version="1.0"?>
-<launch>
-  <include file="$(find a2_456_referee)/launch/a2.launch">
-  </include>
-  
-  <node name="referee" pkg="a2_456_referee" type="referee.py" args="route2 dor" output="screen"/>
-  <node name="high_speed_controller" pkg="a2_456_answer" type="high_speed_controller" output="screen" />
-</launch>
